@@ -1,0 +1,16 @@
+# dependencias
+node_modules/
+
+# variables de entorno (NUNCA subir tus API keys)
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel/
+
+# sistema / logs
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-error.log*

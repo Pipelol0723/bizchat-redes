@@ -1,0 +1,12 @@
+{
+  "name": "bizchat-redes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Demo de portafolio: bot multicanal con IA (modo híbrido, BYOK). Sitio estático + función serverless en Vercel.",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
+    "@ai-sdk/google": "^1.2.22",
+    "@ai-sdk/openai": "^1.3.24",
+    "ai": "^4.3.19"
+  }
+}
