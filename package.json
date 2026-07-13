@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Demo de portafolio: bot multicanal con IA (modo híbrido, BYOK). Sitio estático + función serverless en Vercel.",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/google": "^1.2.22",
@@ -10,5 +13,9 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "ai": "^4.3.19"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2"
   }
 }
