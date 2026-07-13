@@ -45,6 +45,9 @@ bizchat-redes/
 2. **Agregar tu API key.** Project → **Settings → Environment Variables**, agrega **una**:
    - `ANTHROPIC_API_KEY` (recomendado) · o `OPENAI_API_KEY` · o `GOOGLE_GENERATIVE_AI_API_KEY`
    - opcional: `DEFAULT_PROVIDER` = `anthropic` | `openai` | `google`
+   - **recomendado:** `ALLOWED_ORIGINS` = `https://bizchat-redes.pipelol.dev` (dominios permitidos
+     para llamar a `/api/demo-chat`, separados por comas). Sin esta variable el endpoint acepta
+     cualquier origen y la API key queda expuesta al abuso de costos.
 3. **Deploy.** Vercel instala dependencias, publica `index.html` en `/` y la función en
    `/api/demo-chat`. Tu demo queda en `https://bizchat-redes.vercel.app` (o tu dominio).
 
