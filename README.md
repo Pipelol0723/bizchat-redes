@@ -81,7 +81,8 @@ Crea un `.env.local` (copia de `.env.example`) con tu key para probar la IA real
 
 ## Notas
 
-- El rate-limit de la función es *best-effort* por instancia. Para producción con tráfico real,
-  usa **Vercel KV** o **Upstash Redis**.
+- El rate-limit de la función usa **Upstash Redis** (store compartido) cuando están las variables
+  `KV_REST_API_URL` / `KV_REST_API_TOKEN`, que Vercel inyecta al conectar la base. Si no están,
+  cae a un contador en memoria por instancia (*best-effort*) para no romper el demo en local.
 - Este demo usa el negocio ficticio **Café Noire**. El plan completo del producto (canales,
   precios, roadmap) está en `../yo/bizchat-social/PLAN.md`.
