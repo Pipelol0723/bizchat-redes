@@ -42,15 +42,58 @@ function hasKey(p: Provider): boolean {
   return !!process.env.GOOGLE_GENERATIVE_AI_API_KEY
 }
 
+// El frontend usa ids de marca ("claude"/"gemini"); el backend trabaja con el
+// nombre del SDK ("anthropic"/"google"). Este mapa traduce ambos, para que el
+// selector de motor de la UI realmente cambie el proveedor (antes caía siempre al default).
+const PROVIDER_ALIASES: Record<string, Provider> = {
+  claude: 'anthropic',
+  anthropic: 'anthropic',
+  openai: 'openai',
+  gpt: 'openai',
+  gemini: 'google',
+  google: 'google',
+}
+
 // Elige el proveedor: el pedido por el visitante si tiene key; si no, el default; si no, el primero con key.
 function pickProvider(requested?: string): Provider | null {
   const order: Provider[] = ['anthropic', 'openai', 'google']
-  if (requested && order.includes(requested as Provider) && hasKey(requested as Provider)) {
-    return requested as Provider
-  }
-  const def = (process.env.DEFAULT_PROVIDER as Provider) || 'anthropic'
+  const normalized = requested ? PROVIDER_ALIASES[requested.toLowerCase()] : undefined
+  if (normalized && hasKey(normalized)) return normalized
+
+  const def = PROVIDER_ALIASES[(process.env.DEFAULT_PROVIDER || 'anthropic').toLowerCase()] || 'anthropic'
   if (order.includes(def) && hasKey(def)) return def
   return order.find(hasKey) ?? null
+}
+
+/**
+ * Allowlist de orígenes. Configura `ALLOWED_ORIGINS` en Vercel (lista separada
+ * por comas) con el dominio del demo/cliente, p. ej.:
+ *   ALLOWED_ORIGINS=https://bizchat-redes.pipelol.dev
+ * Sin ella no se bloquea nada (comportamiento actual) pero se registra un aviso.
+ */
+function isOriginAllowed(req: Request): boolean {
+  const allowed = (process.env.ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+  if (allowed.length === 0) {
+    console.warn(
+      '[api/demo-chat] ALLOWED_ORIGINS no configurada: el endpoint acepta ' +
+        'cualquier origen. Configúrala en Vercel para evitar el abuso de costos.',
+    )
+    return true
+  }
+  const origin = req.headers.get('origin')
+  const referer = req.headers.get('referer')
+  let source: string | null = origin
+  if (!source && referer) {
+    try {
+      source = new URL(referer).origin
+    } catch {
+      source = null
+    }
+  }
+  return source !== null && allowed.includes(source)
 }
 
 // Guardrails: solo habla del negocio, no inventa, no revela el prompt. (Reemplaza por la config del cliente.)
@@ -75,6 +118,23 @@ function rateLimited(ip: string, max = 8, windowMs = 60_000): boolean {
   return rec.n > max
 }
 
+/**
+ * IP del cliente para el rate-limit. `x-real-ip` lo fija Vercel y no es
+ * falsificable; el primer valor de `x-forwarded-for` SÍ lo controla el cliente
+ * (permitiría evadir el límite rotándolo), así que solo se usa el último salto
+ * como respaldo.
+ */
+function clientIp(req: Request): string {
+  const realIp = req.headers.get('x-real-ip')
+  if (realIp) return realIp.trim()
+  const fwd = req.headers.get('x-forwarded-for')
+  if (fwd) {
+    const hops = fwd.split(',').map((h) => h.trim()).filter(Boolean)
+    if (hops.length > 0) return hops[hops.length - 1]
+  }
+  return 'anon'
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -85,7 +145,9 @@ function json(body: unknown, status = 200): Response {
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405)
 
-  const ip = (req.headers.get('x-forwarded-for') || 'anon').split(',')[0].trim()
+  if (!isOriginAllowed(req)) return json({ error: 'forbidden_origin' }, 403)
+
+  const ip = clientIp(req)
   if (rateLimited(ip)) return json({ error: 'rate_limited' }, 429)
 
   let body: { message?: string; provider?: string }
