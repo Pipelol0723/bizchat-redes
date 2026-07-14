@@ -15,7 +15,7 @@
     "ai": "^4.3.19"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1",
-    "typescript": "^7.0.2"
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3"
   }
 }
